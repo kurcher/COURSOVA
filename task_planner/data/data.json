@@ -1,0 +1,53 @@
+{
+  "members": [
+    {
+      "id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
+      "name": "юрец",
+      "role": "Розробник",
+      "task_ids": [
+        "01a89d1e-f5ab-43b4-b228-5a6720cfb8bd",
+        "418145d0-5239-4e3b-bab8-1948cabf8049",
+        "9b7f509d-c661-46c7-90b8-c9db71565570",
+        "2e5723b6-17cc-40de-acde-24bf20be2745"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "01a89d1e-f5ab-43b4-b228-5a6720cfb8bd",
+      "title": "зробить лабу",
+      "description": "",
+      "deadline": "2025-11-20",
+      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
+      "is_completed": true,
+      "created_date": "2025-11-16T00:48:40.988808"
+    },
+    {
+      "id": "418145d0-5239-4e3b-bab8-1948cabf8049",
+      "title": "зробить ще лабу",
+      "description": "",
+      "deadline": "2025-11-23",
+      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
+      "is_completed": false,
+      "created_date": "2025-11-16T01:00:45.783495"
+    },
+    {
+      "id": "9b7f509d-c661-46c7-90b8-c9db71565570",
+      "title": "вфвф",
+      "description": "",
+      "deadline": "2025-11-23",
+      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
+      "is_completed": false,
+      "created_date": "2025-11-16T01:00:55.410326"
+    },
+    {
+      "id": "2e5723b6-17cc-40de-acde-24bf20be2745",
+      "title": "вфвфвфвф",
+      "description": "",
+      "deadline": "2025-11-23",
+      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
+      "is_completed": false,
+      "created_date": "2025-11-16T01:00:58.802302"
+    }
+  ]
+}
