@@ -2,16 +2,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, date
 from typing import List, Optional
 import uuid
+from .exceptions import TaskValidationError, MemberValidationError
 
 
-class TaskError(Exception):
-    """Базовий клас помилок для завдань"""
-    pass
 
-
-class MemberError(Exception):
-    """Базовий клас помилок для членів команди"""
-    pass
 
 
 @dataclass
@@ -25,9 +19,9 @@ class TeamMember:
     def __post_init__(self):
         """Валідація після ініціалізації"""
         if not self.name.strip():
-            raise MemberError("Ім'я члена команди не може бути порожнім")
+            raise MemberValidationError.empty_name()
         if not self.role.strip():
-            raise MemberError("Роль члена команди не може бути порожньою")
+            raise MemberValidationError.empty_role()
 
     def add_task(self, task_id: str) -> None:
         """Додає ID завдання до списку завдань члена команди"""
@@ -77,9 +71,9 @@ class Task:
     def __post_init__(self):
         """Валідація після ініціалізації"""
         if not self.title.strip():
-            raise TaskError("Назва завдання не може бути порожньою")
+            raise TaskValidationError.empty_title()
         if self.deadline < date.today():
-            raise TaskError("Дедлайн не може бути в минулому")
+            raise TaskValidationError.past_deadline()
 
     def mark_done(self) -> None:
         """Позначає завдання як виконане"""

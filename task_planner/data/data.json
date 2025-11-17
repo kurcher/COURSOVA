@@ -3,12 +3,13 @@
     {
       "id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
       "name": "юрец",
-      "role": "Розробник",
+      "role": "Менеджер",
       "task_ids": [
         "01a89d1e-f5ab-43b4-b228-5a6720cfb8bd",
         "418145d0-5239-4e3b-bab8-1948cabf8049",
         "9b7f509d-c661-46c7-90b8-c9db71565570",
-        "2e5723b6-17cc-40de-acde-24bf20be2745"
+        "2e5723b6-17cc-40de-acde-24bf20be2745",
+        "ddbff3f1-6ef1-4e72-a16c-7ce93364b074"
       ]
     },
     {
@@ -65,6 +66,15 @@
       "assignee_id": "3109f9b9-448c-47b1-8d1c-7e8accb82a7d",
       "is_completed": false,
       "created_date": "2025-11-16T22:12:28.457693"
+    },
+    {
+      "id": "ddbff3f1-6ef1-4e72-a16c-7ce93364b074",
+      "title": "лабка",
+      "description": "",
+      "deadline": "2025-11-17",
+      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
+      "is_completed": false,
+      "created_date": "2025-11-17T01:33:59.001280"
     }
   ]
 }

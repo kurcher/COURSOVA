@@ -1,7 +1,11 @@
 import pytest
 from datetime import date, timedelta
-from task_planner.bll.models import Task, TeamMember, TaskError, MemberError
+from task_planner.bll.models import Task, TeamMember
 from task_planner.bll.services import ProjectManager
+from task_planner.bll.exceptions import (
+    DuplicateMemberError, DuplicateTaskError,
+    MemberNotFoundError, TaskNotFoundError
+)
 
 
 class TestProjectManager:
@@ -50,7 +54,7 @@ class TestProjectManager:
         duplicate_member = TeamMember(name=self.member.name, role="Аналітик")
 
         # Act & Assert
-        with pytest.raises(MemberError):
+        with pytest.raises(DuplicateMemberError):
             self.manager.add_member(duplicate_member)
 
     def test_add_task_success(self):
@@ -96,7 +100,7 @@ class TestProjectManager:
         )
 
         # Act & Assert
-        with pytest.raises(TaskError):
+        with pytest.raises(DuplicateTaskError):
             self.manager.add_task(duplicate_task)
 
     def test_remove_member_with_tasks(self):
@@ -225,3 +229,88 @@ class TestProjectManager:
         overdue_tasks = self.manager.get_overdue_tasks()
         assert len(overdue_tasks) == 1
         assert overdue_tasks[0] == self.task
+
+
+
+    def test_add_task_with_nonexistent_assignee(self):
+        """Тест додавання завдання з неіснуючим виконавцем (Triple A)"""
+        # Arrange
+        manager = ProjectManager()
+        task = Task(
+            title="Завдання з неіснуючим виконавцем",
+            description="Опис",
+            deadline=date.today() + timedelta(days=1),
+            assignee_id="nonexistent-id"
+        )
+
+        # Act & Assert
+        with pytest.raises(MemberNotFoundError):
+            manager.add_task(task)
+
+    def test_remove_nonexistent_member(self):
+        """Тест видалення неіснуючого члена команди (Triple A)"""
+        # Arrange
+        manager = ProjectManager()
+
+        # Act & Assert
+        with pytest.raises(MemberNotFoundError):
+            manager.remove_member("nonexistent-id")
+
+    def test_remove_nonexistent_task(self):
+        """Тест видалення неіснуючого завдання (Triple A)"""
+        # Arrange
+        manager = ProjectManager()
+
+        # Act & Assert
+        with pytest.raises(TaskNotFoundError):
+            manager.remove_task("nonexistent-id")
+
+    def test_update_task_assignee_nonexistent_task(self):
+        """Тест оновлення виконавця для неіснуючого завдання (Triple A)"""
+        # Arrange
+        manager = ProjectManager()
+        member = TeamMember(name="Тестовий член", role="Розробник")
+        manager.add_member(member)
+
+        # Act & Assert
+        with pytest.raises(TaskNotFoundError):
+            manager.update_task_assignee("nonexistent-task-id", member.id)
+
+    def test_update_task_assignee_nonexistent_member(self):
+        """Тест оновлення виконавця на неіснуючого члена команди (Triple A)"""
+        # Arrange
+        manager = ProjectManager()
+        task = Task(
+            title="Тестове завдання",
+            description="Опис",
+            deadline=date.today() + timedelta(days=1)
+        )
+        manager.add_task(task)
+
+        # Act & Assert
+        with pytest.raises(MemberNotFoundError):
+            manager.update_task_assignee(task.id, "nonexistent-member-id")
+
+    def test_get_member_tasks_empty(self):
+        """Тест отримання завдань члена команди без завдань (Triple A)"""
+        # Arrange
+        manager = ProjectManager()
+        member = TeamMember(name="Тестовий член", role="Розробник")
+        manager.add_member(member)
+
+        # Act
+        tasks = manager.get_member_tasks(member.id)
+
+        # Assert
+        assert tasks == []
+
+    def test_get_project_progress_empty(self):
+        """Тест прогресу проєкту без завдань (Triple A)"""
+        # Arrange
+        manager = ProjectManager()
+
+        # Act
+        progress = manager.get_project_progress()
+
+        # Assert
+        assert progress == 0.0

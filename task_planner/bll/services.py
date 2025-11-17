@@ -1,6 +1,11 @@
 from typing import List, Optional
 from datetime import date
-from .models import Task, TeamMember, TaskError, MemberError
+from .models import Task, TeamMember
+from .exceptions import (
+    TaskError, MemberError,
+    DuplicateMemberError, DuplicateTaskError,
+    MemberNotFoundError, TaskNotFoundError
+)
 
 
 class ProjectManager:
@@ -13,14 +18,14 @@ class ProjectManager:
     def add_member(self, member: TeamMember) -> None:
         """Додає члена команди"""
         if any(m.name == member.name for m in self.members):
-            raise MemberError(f"Член команди з іменем '{member.name}' вже існує")
+            raise DuplicateMemberError.by_name(member.name)
         self.members.append(member)
 
     def remove_member(self, member_id: str) -> None:
         """Видаляє члена команди за ID"""
         member = self.find_member_by_id(member_id)
         if not member:
-            raise MemberError("Член команди не знайдений")
+            raise MemberNotFoundError.by_id()
 
         # Видаляємо завдання, призначені цьому члену команди
         for task in self.tasks[:]:
@@ -40,12 +45,12 @@ class ProjectManager:
     def add_task(self, task: Task) -> None:
         """Додає завдання"""
         if any(t.title == task.title for t in self.tasks):
-            raise TaskError(f"Завдання з назвою '{task.title}' вже існує")
+            raise DuplicateTaskError.by_title(task.title)
 
         if task.assignee_id:
             assignee = self.find_member_by_id(task.assignee_id)
             if not assignee:
-                raise TaskError("Призначений член команди не знайдений")
+                raise MemberNotFoundError.for_task_assignment()
             assignee.add_task(task.id)
 
         self.tasks.append(task)
@@ -54,7 +59,7 @@ class ProjectManager:
         """Видаляє завдання за ID"""
         task = self.find_task_by_id(task_id)
         if not task:
-            raise TaskError("Завдання не знайдене")
+            raise TaskNotFoundError.by_id()
 
         if task.assignee_id:
             assignee = self.find_member_by_id(task.assignee_id)
@@ -71,7 +76,7 @@ class ProjectManager:
         """Оновлює призначеного виконавця для завдання"""
         task = self.find_task_by_id(task_id)
         if not task:
-            raise TaskError("Завдання не знайдене")
+            raise TaskNotFoundError.by_id()
 
         # Видаляємо завдання зі старого виконавця
         if task.assignee_id:
@@ -83,7 +88,7 @@ class ProjectManager:
         if new_assignee_id:
             new_assignee = self.find_member_by_id(new_assignee_id)
             if not new_assignee:
-                raise TaskError("Новий призначений член команди не знайдений")
+                raise MemberNotFoundError.for_task_assignment()
             new_assignee.add_task(task_id)
 
         task.assignee_id = new_assignee_id

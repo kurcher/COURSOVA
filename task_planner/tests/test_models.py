@@ -1,6 +1,7 @@
 import pytest
 from datetime import date, timedelta, datetime
-from task_planner.bll.models import Task, TeamMember, TaskError, MemberError
+from task_planner.bll.models import Task, TeamMember
+from task_planner.bll.exceptions import TaskValidationError, MemberValidationError
 
 
 class TestTask:
@@ -63,7 +64,7 @@ class TestTask:
         empty_title = ""
 
         # Act & Assert
-        with pytest.raises(TaskError, match="Назва завдання не може бути порожньою"):
+        with pytest.raises(TaskValidationError, match="Назва завдання не може бути порожньою"):
             Task(
                 title=empty_title,
                 description="Опис",
@@ -76,7 +77,7 @@ class TestTask:
         past_deadline = date.today() - timedelta(days=1)
 
         # Act & Assert
-        with pytest.raises(TaskError, match="Дедлайн не може бути в минулому"):
+        with pytest.raises(TaskValidationError, match="Дедлайн не може бути в минулому"):
             Task(
                 title="Тестове завдання",
                 description="Опис",
@@ -206,7 +207,7 @@ class TestTeamMember:
         empty_name = ""
 
         # Act & Assert
-        with pytest.raises(MemberError, match="Ім'я члена команди не може бути порожнім"):
+        with pytest.raises(MemberValidationError, match="Ім'я члена команди не може бути порожнім"):
             TeamMember(name=empty_name, role="Розробник")
 
     def test_create_member_empty_role(self):
@@ -215,7 +216,7 @@ class TestTeamMember:
         empty_role = ""
 
         # Act & Assert
-        with pytest.raises(MemberError, match="Роль члена команди не може бути порожньою"):
+        with pytest.raises(MemberValidationError, match="Роль члена команди не може бути порожньою"):
             TeamMember(name="Іван Іванов", role=empty_role)
 
     def test_add_and_remove_task(self):
@@ -304,6 +305,60 @@ class TestTeamMember:
 
         # Assert
         assert member.id == 'member-id-123'
-        assert member.name == 'Петро Петренко'  # Виправлено опечатку
+        assert member.name == 'Петро Петренко'
         assert member.role == 'Тестувальник'
         assert member.task_ids == ['task-1', 'task-2']
+
+
+
+    def test_task_mark_done_already_completed(self):
+        """Тест повторного позначення виконаним (Triple A)"""
+        # Arrange
+        task = Task(
+            title="Тестове завдання",
+            description="Опис",
+            deadline=date.today() + timedelta(days=1)
+        )
+        task.mark_done()
+
+        # Act - повторне викликання
+        task.mark_done()
+
+        # Assert - статус має залишитись виконаним
+        assert task.is_completed
+
+    def test_task_mark_undone_already_pending(self):
+        """Тест повторного позначення невиконаним (Triple A)"""
+        # Arrange
+        task = Task(
+            title="Тестове завдання",
+            description="Опис",
+            deadline=date.today() + timedelta(days=1)
+        )
+
+        # Act - позначити невиконаним (вже невиконане)
+        task.mark_undone()
+
+        # Assert - статус має залишитись невиконаним
+        assert not task.is_completed
+
+    def test_task_from_dict_with_date_objects(self):
+        """Тест десеріалізації з об'єктами date (Triple A)"""
+        # Arrange
+        task_data = {
+            'id': 'test-id-456',
+            'title': 'Завдання з об\'єктами date',
+            'description': 'Опис',
+            'deadline': date.today() + timedelta(days=3),  # Об'єкт date, не рядок
+            'is_completed': False,
+            'assignee_id': None,
+            'created_date': datetime.now()
+        }
+
+        # Act
+        task = Task.from_dict(task_data)
+
+        # Assert
+        assert task.id == 'test-id-456'
+        assert task.title == 'Завдання з об\'єктами date'
+        assert isinstance(task.deadline, date)
