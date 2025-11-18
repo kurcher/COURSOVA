@@ -1,4 +1,3 @@
-# bll/models/team_member.py
 from datetime import datetime
 from typing import List
 from .base_model import BaseModel
