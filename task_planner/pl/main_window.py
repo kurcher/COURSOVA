@@ -1,27 +1,18 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QTabWidget, QTableWidget, QTableWidgetItem,
                              QPushButton, QLabel, QProgressBar, QMessageBox,
-                             QHeaderView, QSplitter, QComboBox, QLineEdit,
-                             QCheckBox, QMenu, QAction)
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QFont
+                             QHeaderView, QComboBox, QLineEdit)
+from PyQt5.QtCore import Qt
 from datetime import date
-
 
 
 class MainWindow(QMainWindow):
     """Головне вікно програми"""
 
-
-
-
-
-    def __init__(self, project_manager, dal):
+    def __init__(self, project_manager):
         super().__init__()
         self.project_manager = project_manager
-        self.dal = dal
         self.setup_ui()
-        self.load_data()
         self.update_ui()
 
     def setup_ui(self):
@@ -48,7 +39,6 @@ class MainWindow(QMainWindow):
         status_layout.addWidget(self.stats_label)
 
         status_layout.addStretch()
-
         main_layout.addLayout(status_layout)
 
         # Основні вкладки
@@ -103,15 +93,13 @@ class MainWindow(QMainWindow):
 
         # Таблиця завдань
         self.tasks_table = QTableWidget()
-        self.tasks_table.setColumnCount(6)
+        self.tasks_table.setColumnCount(7)
         self.tasks_table.setHorizontalHeaderLabels([
-            "Назва", "Опис", "Дедлайн", "Виконавець", "Статус", "Прострочено"
+            "Назва", "Опис", "Дедлайн", "Виконавець", "Статус", "Прострочено", "Створено"
         ])
         self.tasks_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tasks_table.doubleClicked.connect(self.edit_task)
         layout.addWidget(self.tasks_table)
-
-
 
     def setup_members_tab(self):
         """Налаштовує вкладку членів команди"""
@@ -137,57 +125,13 @@ class MainWindow(QMainWindow):
 
         # Таблиця членів команди
         self.members_table = QTableWidget()
-        self.members_table.setColumnCount(4)
+        self.members_table.setColumnCount(5)
         self.members_table.setHorizontalHeaderLabels([
-            "Ім'я", "Роль", "Кількість завдань", "Завантаженість"
+            "Ім'я", "Роль", "Кількість завдань", "Завантаженість", "Створено"
         ])
         self.members_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.members_table.doubleClicked.connect(self.edit_member)
         layout.addWidget(self.members_table)
-
-    def load_data(self):
-        """Завантажує дані з DAL"""
-        try:
-            # Завантажуємо членів команди
-            members_data = self.dal.load_members()
-            for member_data in members_data:
-                member = self.project_manager.find_member_by_id(member_data['id'])
-                if not member:
-
-                    from task_planner.bll.models import TeamMember
-                    member = TeamMember.from_dict(member_data)
-                    self.project_manager.members.append(member)
-
-            # Завантажуємо завдання
-            tasks_data = self.dal.load_tasks()
-            for task_data in tasks_data:
-                task = self.project_manager.find_task_by_id(task_data['id'])
-                if not task:
-
-                    from task_planner.bll.models import Task
-                    task = Task.from_dict(task_data)
-                    self.project_manager.tasks.append(task)
-
-                    # Відновлюємо зв'язок з виконавцем
-                    if task.assignee_id:
-                        assignee = self.project_manager.find_member_by_id(task.assignee_id)
-                        if assignee:
-                            assignee.add_task(task.id)
-
-        except Exception as e:
-            QMessageBox.critical(self, "Помилка", f"Не вдалося завантажити дані: {str(e)}")
-
-    def save_data(self):
-        """Зберігає дані через DAL"""
-        try:
-            members_data = [member.to_dict() for member in self.project_manager.members]
-            tasks_data = [task.to_dict() for task in self.project_manager.tasks]
-
-            self.dal.save_members(members_data)
-            self.dal.save_tasks(tasks_data)
-
-        except Exception as e:
-            QMessageBox.critical(self, "Помилка", f"Не вдалося зберегти дані: {str(e)}")
 
     def update_ui(self):
         """Оновлює весь інтерфейс"""
@@ -203,8 +147,14 @@ class MainWindow(QMainWindow):
         filter_text = self.filter_combo.currentText()
         search_text = self.search_edit.text().lower()
 
+        try:
+            all_tasks = self.project_manager.get_all_tasks()
+        except Exception as e:
+            QMessageBox.critical(self, "Помилка", f"Не вдалося завантажити завдання: {str(e)}")
+            return
+
         filtered_tasks = []
-        for task in self.project_manager.tasks:
+        for task in all_tasks:
             # Застосовуємо фільтр статусу
             if filter_text == "Активні" and task.is_completed:
                 continue
@@ -239,9 +189,11 @@ class MainWindow(QMainWindow):
             # Виконавець
             assignee_name = "Не призначено"
             if task.assignee_id:
-                assignee = self.project_manager.find_member_by_id(task.assignee_id)
-                if assignee:
-                    assignee_name = assignee.name
+                try:
+                    member = self.project_manager.get_member(task.assignee_id)
+                    assignee_name = member.name
+                except:
+                    assignee_name = "Невідомий"
             assignee_item = QTableWidgetItem(assignee_name)
             self.tasks_table.setItem(row, 3, assignee_item)
 
@@ -256,15 +208,25 @@ class MainWindow(QMainWindow):
                 overdue_item.setForeground(Qt.red)
             self.tasks_table.setItem(row, 5, overdue_item)
 
+            # Дата створення
+            created_item = QTableWidgetItem(task.created_date.strftime("%d.%m.%Y %H:%M"))
+            self.tasks_table.setItem(row, 6, created_item)
+
             # Зберігаємо ID завдання для подальшого використання
-            for col in range(6):
+            for col in range(7):
                 self.tasks_table.item(row, col).setData(Qt.UserRole, task.id)
 
     def update_members_table(self):
         """Оновлює таблицю членів команди"""
-        self.members_table.setRowCount(len(self.project_manager.members))
+        try:
+            members = self.project_manager.get_all_members()
+        except Exception as e:
+            QMessageBox.critical(self, "Помилка", f"Не вдалося завантажити членів команди: {str(e)}")
+            return
 
-        for row, member in enumerate(self.project_manager.members):
+        self.members_table.setRowCount(len(members))
+
+        for row, member in enumerate(members):
             # Ім'я
             name_item = QTableWidgetItem(member.name)
             self.members_table.setItem(row, 0, name_item)
@@ -274,7 +236,7 @@ class MainWindow(QMainWindow):
             self.members_table.setItem(row, 1, role_item)
 
             # Кількість завдань
-            tasks_count = member.get_workload()
+            tasks_count = self.project_manager.get_member_workload(member.id)
             tasks_item = QTableWidgetItem(str(tasks_count))
             self.members_table.setItem(row, 2, tasks_item)
 
@@ -285,28 +247,39 @@ class MainWindow(QMainWindow):
             workload_item = QTableWidgetItem(workload_text)
             self.members_table.setItem(row, 3, workload_item)
 
+            # Дата створення
+            created_item = QTableWidgetItem(member.created_date.strftime("%d.%m.%Y %H:%M"))
+            self.members_table.setItem(row, 4, created_item)
+
             # Зберігаємо ID члена команди для подальшого використання
-            for col in range(4):
+            for col in range(5):
                 self.members_table.item(row, col).setData(Qt.UserRole, member.id)
 
     def update_project_status(self):
         """Оновлює статус проєкту"""
-        total_tasks = len(self.project_manager.tasks)
-        completed_tasks = len(self.project_manager.get_completed_tasks())
-        overdue_tasks = len(self.project_manager.get_overdue_tasks())
+        try:
+            total_tasks = len(self.project_manager.get_all_tasks())
+            completed_tasks = len(self.project_manager.get_completed_tasks())
+            overdue_tasks = len(self.project_manager.get_overdue_tasks())
 
-        progress = self.project_manager.get_project_progress()
-        self.progress_bar.setValue(int(progress))
+            progress = self.project_manager.get_project_progress()
+            self.progress_bar.setValue(int(progress))
 
-        stats_text = f"Завдань: {total_tasks} | Виконано: {completed_tasks} | Прострочено: {overdue_tasks}"
-        self.stats_label.setText(stats_text)
+            stats_text = f"Завдань: {total_tasks} | Виконано: {completed_tasks} | Прострочено: {overdue_tasks}"
+            self.stats_label.setText(stats_text)
+        except Exception as e:
+            self.stats_label.setText(f"Помилка: {str(e)}")
 
     def add_task(self):
         """Додає нове завдання"""
-        from task_planner.pl.task_dialog import TaskDialog
-        dialog = TaskDialog(self.project_manager, self.project_manager.members, parent=self)
-        dialog.task_saved.connect(self.on_task_saved)
-        dialog.exec_()
+        from .task_dialog import TaskDialog
+        try:
+            members = self.project_manager.get_all_members()
+            dialog = TaskDialog(self.project_manager, members, parent=self)
+            dialog.task_saved.connect(self.on_task_saved)
+            dialog.exec_()
+        except Exception as e:
+            QMessageBox.critical(self, "Помилка", f"Не вдалося відкрити діалог: {str(e)}")
 
     def edit_task(self):
         """Редагує вибране завдання"""
@@ -316,15 +289,16 @@ class MainWindow(QMainWindow):
             return
 
         task_id = selected_items[0].data(Qt.UserRole)
-        task = self.project_manager.find_task_by_id(task_id)
-        if not task:
-            QMessageBox.warning(self, "Попередження", "Завдання не знайдено")
-            return
+        try:
+            task = self.project_manager.get_task(task_id)
+            members = self.project_manager.get_all_members()
 
-        from task_planner.pl.task_dialog import TaskDialog
-        dialog = TaskDialog(self.project_manager, self.project_manager.members, task, self)
-        dialog.task_saved.connect(self.on_task_saved)
-        dialog.exec_()
+            from .task_dialog import TaskDialog
+            dialog = TaskDialog(self.project_manager, members, task, self)
+            dialog.task_saved.connect(self.on_task_saved)
+            dialog.exec_()
+        except Exception as e:
+            QMessageBox.critical(self, "Помилка", f"Не вдалося редагувати завдання: {str(e)}")
 
     def delete_task(self):
         """Видаляє вибране завдання"""
@@ -334,33 +308,32 @@ class MainWindow(QMainWindow):
             return
 
         task_id = selected_items[0].data(Qt.UserRole)
-        task = self.project_manager.find_task_by_id(task_id)
-        if not task:
-            QMessageBox.warning(self, "Попередження", "Завдання не знайдено")
-            return
+        try:
+            task = self.project_manager.get_task(task_id)
 
-        reply = QMessageBox.question(
-            self,
-            "Підтвердження видалення",
-            f"Ви впевнені, що хочете видалити завдання '{task.title}'?",
-            QMessageBox.Yes | QMessageBox.No
-        )
+            reply = QMessageBox.question(
+                self,
+                "Підтвердження видалення",
+                f"Ви впевнені, що хочете видалити завдання '{task.title}'?",
+                QMessageBox.Yes | QMessageBox.No
+            )
 
-        if reply == QMessageBox.Yes:
-            try:
-                self.project_manager.remove_task(task_id)
-                self.save_data()
+            if reply == QMessageBox.Yes:
+                self.project_manager.delete_task(task_id)
                 self.update_ui()
                 QMessageBox.information(self, "Успіх", "Завдання успішно видалено")
-            except Exception as e:
-                QMessageBox.critical(self, "Помилка", f"Не вдалося видалити завдання: {str(e)}")
+        except Exception as e:
+            QMessageBox.critical(self, "Помилка", f"Не вдалося видалити завдання: {str(e)}")
 
     def add_member(self):
         """Додає нового члена команди"""
-        from task_planner.pl.member_dialog import MemberDialog
-        dialog = MemberDialog(self.project_manager, parent=self)
-        dialog.member_saved.connect(self.on_member_saved)
-        dialog.exec_()
+        from .member_dialog import MemberDialog
+        try:
+            dialog = MemberDialog(self.project_manager, parent=self)
+            dialog.member_saved.connect(self.on_member_saved)
+            dialog.exec_()
+        except Exception as e:
+            QMessageBox.critical(self, "Помилка", f"Не вдалося відкрити діалог: {str(e)}")
 
     def edit_member(self):
         """Редагує вибраного члена команди"""
@@ -370,15 +343,15 @@ class MainWindow(QMainWindow):
             return
 
         member_id = selected_items[0].data(Qt.UserRole)
-        member = self.project_manager.find_member_by_id(member_id)
-        if not member:
-            QMessageBox.warning(self, "Попередження", "Члена команди не знайдено")
-            return
+        try:
+            member = self.project_manager.get_member(member_id)
 
-        from task_planner.pl.member_dialog import MemberDialog
-        dialog = MemberDialog(self.project_manager, member, self)
-        dialog.member_saved.connect(self.on_member_saved)
-        dialog.exec_()
+            from .member_dialog import MemberDialog
+            dialog = MemberDialog(self.project_manager, member, self)
+            dialog.member_saved.connect(self.on_member_saved)
+            dialog.exec_()
+        except Exception as e:
+            QMessageBox.critical(self, "Помилка", f"Не вдалося редагувати члена команди: {str(e)}")
 
     def delete_member(self):
         """Видаляє вибраного члена команди"""
@@ -388,50 +361,45 @@ class MainWindow(QMainWindow):
             return
 
         member_id = selected_items[0].data(Qt.UserRole)
-        member = self.project_manager.find_member_by_id(member_id)
-        if not member:
-            QMessageBox.warning(self, "Попередження", "Члена команди не знайдено")
-            return
+        try:
+            member = self.project_manager.get_member(member_id)
+            workload = self.project_manager.get_member_workload(member_id)
 
-        if member.get_workload() > 0:
+            if workload > 0:
+                reply = QMessageBox.question(
+                    self,
+                    "Попередження",
+                    f"Цей член команди має {workload} завдань. Видалення призведе до видалення всіх його завдань. Продовжити?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                if reply == QMessageBox.No:
+                    return
+
             reply = QMessageBox.question(
                 self,
-                "Попередження",
-                f"Цей член команди має {member.get_workload()} завдань. Видалення призведе до видалення всіх його завдань. Продовжити?",
+                "Підтвердження видалення",
+                f"Ви впевнені, що хочете видалити члена команди '{member.name}'?",
                 QMessageBox.Yes | QMessageBox.No
             )
-            if reply == QMessageBox.No:
-                return
 
-        reply = QMessageBox.question(
-            self,
-            "Підтвердження видалення",
-            f"Ви впевнені, що хочете видалити члена команди '{member.name}'?",
-            QMessageBox.Yes | QMessageBox.No
-        )
-
-        if reply == QMessageBox.Yes:
-            try:
-                self.project_manager.remove_member(member_id)
-                self.save_data()
+            if reply == QMessageBox.Yes:
+                self.project_manager.delete_member(member_id)
                 self.update_ui()
                 QMessageBox.information(self, "Успіх", "Члена команди успішно видалено")
-            except Exception as e:
-                QMessageBox.critical(self, "Помилка", f"Не вдалося видалити члена команди: {str(e)}")
+        except Exception as e:
+            QMessageBox.critical(self, "Помилка", f"Не вдалося видалити члена команди: {str(e)}")
 
     def on_task_saved(self, task):
         """Обробляє збереження завдання"""
-        self.save_data()
         self.update_ui()
         QMessageBox.information(self, "Успіх", "Завдання успішно збережено")
 
     def on_member_saved(self, member):
         """Обробляє збереження члена команди"""
-        self.save_data()
         self.update_ui()
         QMessageBox.information(self, "Успіх", "Члена команди успішно збережено")
 
     def closeEvent(self, event):
         """Обробляє закриття програми"""
-        self.save_data()
+        # Дані тепер зберігаються автоматично через репозиторії
         event.accept()

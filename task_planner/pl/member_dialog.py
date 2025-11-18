@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                              QLineEdit, QComboBox, QPushButton, QMessageBox)
 from PyQt5.QtCore import pyqtSignal
-from task_planner.bll.models import TeamMember
 
 class MemberDialog(QDialog):
     """Діалог для додавання/редагування члена команди"""
@@ -29,7 +28,7 @@ class MemberDialog(QDialog):
             self.name_edit.setText(self.member.name)
         layout.addWidget(self.name_edit)
 
-        # Роль
+
         layout.addWidget(QLabel("Роль*:"))
         self.role_combo = QComboBox()
         self.role_combo.addItems(["Розробник", "Тестувальник", "Дизайнер", "Менеджер", "Аналітик"])
@@ -39,7 +38,7 @@ class MemberDialog(QDialog):
                 self.role_combo.setCurrentIndex(index)
         layout.addWidget(self.role_combo)
 
-        # Кнопки
+
         button_layout = QHBoxLayout()
         self.save_button = QPushButton("Зберегти")
         self.cancel_button = QPushButton("Скасувати")
@@ -70,14 +69,13 @@ class MemberDialog(QDialog):
 
             if self.member:
                 # Редагування існуючого члена команди
+                self.project_manager.update_member(self.member.id, name, role)
+                # Оновлюємо локальний об'єкт
                 self.member.name = name
                 self.member.role = role
             else:
                 # Створення нового члена команди
-                from task_planner.bll.models import TeamMember
-                member = TeamMember(name=name, role=role)
-                self.project_manager.add_member(member)
-                self.member = member
+                self.member = self.project_manager.add_member(name=name, role=role)
 
             self.member_saved.emit(self.member)
             self.accept()

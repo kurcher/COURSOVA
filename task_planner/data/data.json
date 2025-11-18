@@ -1,80 +1,36 @@
 {
   "members": [
     {
-      "id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
-      "name": "юрец",
-      "role": "Менеджер",
+      "id": "c1c5f618-4558-499b-ba89-d4ea47b3a899",
+      "created_date": "2025-11-19T00:03:15.533952",
+      "updated_date": "2025-11-19T00:06:02.180148",
+      "name": "dadsdada",
+      "role": "Розробник",
       "task_ids": [
-        "01a89d1e-f5ab-43b4-b228-5a6720cfb8bd",
-        "418145d0-5239-4e3b-bab8-1948cabf8049",
-        "9b7f509d-c661-46c7-90b8-c9db71565570",
-        "2e5723b6-17cc-40de-acde-24bf20be2745",
-        "ddbff3f1-6ef1-4e72-a16c-7ce93364b074"
-      ]
-    },
-    {
-      "id": "3109f9b9-448c-47b1-8d1c-7e8accb82a7d",
-      "name": "Тестіровщік",
-      "role": "Тестувальник",
-      "task_ids": [
-        "61280ca7-5558-4b21-acbb-ee77eb41836d"
+        "6dceb866-4636-4c5f-b780-ef159c5123d6"
       ]
     }
   ],
   "tasks": [
     {
-      "id": "01a89d1e-f5ab-43b4-b228-5a6720cfb8bd",
-      "title": "зробить лабу",
-      "description": "",
-      "deadline": "2025-11-20",
-      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
-      "is_completed": true,
-      "created_date": "2025-11-16T00:48:40.988808"
+      "id": "6dceb866-4636-4c5f-b780-ef159c5123d6",
+      "created_date": "2025-11-19T00:03:05.795021",
+      "updated_date": "2025-11-19T00:06:02.192360",
+      "title": "dadad",
+      "description": "da",
+      "deadline": "2025-11-26",
+      "assignee_id": "c1c5f618-4558-499b-ba89-d4ea47b3a899",
+      "is_completed": true
     },
     {
-      "id": "418145d0-5239-4e3b-bab8-1948cabf8049",
-      "title": "зробить ще лабу",
+      "id": "3fbdcf08-6b7c-445d-b9b8-5bba676b42e3",
+      "created_date": "2025-11-19T00:03:11.335332",
+      "updated_date": "2025-11-19T00:03:11.335333",
+      "title": "dadasdasd",
       "description": "",
-      "deadline": "2025-11-23",
-      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
-      "is_completed": false,
-      "created_date": "2025-11-16T01:00:45.783495"
-    },
-    {
-      "id": "9b7f509d-c661-46c7-90b8-c9db71565570",
-      "title": "вфвф",
-      "description": "",
-      "deadline": "2025-11-23",
-      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
-      "is_completed": false,
-      "created_date": "2025-11-16T01:00:55.410326"
-    },
-    {
-      "id": "2e5723b6-17cc-40de-acde-24bf20be2745",
-      "title": "вфвфвфвф",
-      "description": "",
-      "deadline": "2025-11-23",
-      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
-      "is_completed": false,
-      "created_date": "2025-11-16T01:00:58.802302"
-    },
-    {
-      "id": "61280ca7-5558-4b21-acbb-ee77eb41836d",
-      "title": "вфвфвфв",
-      "description": "вфв",
-      "deadline": "2025-11-23",
-      "assignee_id": "3109f9b9-448c-47b1-8d1c-7e8accb82a7d",
-      "is_completed": false,
-      "created_date": "2025-11-16T22:12:28.457693"
-    },
-    {
-      "id": "ddbff3f1-6ef1-4e72-a16c-7ce93364b074",
-      "title": "лабка",
-      "description": "",
-      "deadline": "2025-11-17",
-      "assignee_id": "e49c2114-fa48-4cad-a66c-707e54f9507b",
-      "is_completed": false,
-      "created_date": "2025-11-17T01:33:59.001280"
+      "deadline": "2025-11-26",
+      "assignee_id": null,
+      "is_completed": false
     }
   ]
 }

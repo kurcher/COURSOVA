@@ -104,32 +104,31 @@ class TaskDialog(QDialog):
                 return
 
             if self.task:
-                # Редагування існуючого завдання
-                self.task.title = title
-                self.task.description = description
-                self.task.deadline = deadline
+                # Оновлення існуючого завдання
+                # Спочатку оновлюємо призначення
+                self.project_manager.update_task_assignee(self.task.id, assignee_id)
 
-                # Оновлюємо призначення
-                if self.task.assignee_id != assignee_id:
-                    self.project_manager.update_task_assignee(self.task.id, assignee_id)
-
+                # Потім оновлюємо статус
                 if is_completed:
-                    self.task.mark_done()
+                    self.project_manager.mark_task_done(self.task.id)
                 else:
-                    self.task.mark_undone()
+                    self.project_manager.mark_task_undone(self.task.id)
+
+                # Отримуємо оновлене завдання
+                self.task = self.project_manager.get_task(self.task.id)
             else:
                 # Створення нового завдання
-                from task_planner.bll.models import Task
-                task = Task(
+                task = self.project_manager.add_task(
                     title=title,
                     description=description,
                     deadline=deadline,
                     assignee_id=assignee_id
                 )
-                if is_completed:
-                    task.mark_done()
 
-                self.project_manager.add_task(task)
+                # Встановлюємо статус
+                if is_completed:
+                    self.project_manager.mark_task_done(task.id)
+
                 self.task = task
 
             self.task_saved.emit(self.task)
